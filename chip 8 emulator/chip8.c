@@ -81,12 +81,14 @@ void OP_00EE(Chip8 *c){
 //JP addr
 void OP_1nnn(Chip8 *c){
     uint16_t address = c->opcode & 0x0FFFu;
+
     c->pc = address;
 }
 
 //CALL addr
 void OP_2nnn(Chip8 *c){
     uint16_t address = c->opcode & 0x0FFFu;
+
     c->stack[c->sp] = c->pc;
     c->sp += 1;
     c->pc = address;
@@ -96,6 +98,7 @@ void OP_2nnn(Chip8 *c){
 void OP_3xkk(Chip8 *c){
     uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
     uint8_t byte = c->opcode & 0x00FFu;
+
     if (c->registers[Vx] == byte){
         c->pc += 2;
     } 
@@ -105,6 +108,7 @@ void OP_3xkk(Chip8 *c){
 void OP_4xkk(Chip8 *c){
     uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
     uint8_t byte = c->opcode & 0x00FFu;
+
     if (c->registers[Vx] != byte){
         c->pc += 2;
     } 
@@ -114,7 +118,153 @@ void OP_4xkk(Chip8 *c){
 void OP_5xy0(Chip8 *c){
     uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
     uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+
     if (c->registers[Vx] == c->registers[Vy]){
         c->pc += 2;
     } 
+}
+
+//LD Vx, byte
+void OP_6xkk(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t byte = c->opcode & 0x00FFu;
+
+    c->registers[Vx] = byte;
+}
+
+//ADD Vx, byte
+void OP_7xkk(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t byte = c->opcode & 0x00FFu;
+
+    c->registers[Vx] += byte;
+}
+
+//LD Vx, Vy
+void OP_8xy0(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+
+    c->registers[Vx] = c->registers[Vy]
+}
+
+//OR Vx, Vy
+void OP_8xy1(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+
+    c->registers[Vx] |= c->registers[Vy];
+}
+
+//AND Vx, Vy
+void OP_8xy2(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+
+    c->registers[Vx] &= c->registers[Vy];
+}
+
+//XOR Vx, Vy
+void OP_8xy3(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+
+    c->registers[Vx] ^= c->registers[Vy];
+}
+
+//ADD Vx, Vy
+void OP_8xy4(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+    
+    int16_t sum = c->registers[Vx] + c->registers[Vy];
+    if (sum > 255u){
+        c->registers[0xF] = 1; 
+    }
+    else{
+        c->registers[0xF] = 0;
+    }
+    c->registers[Vx] = sum & 0x00FFu;
+}
+
+//SUB Vx, Vy
+void OP_8xy5(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+    
+    if (c->registers[Vx] > c->registers[Vy]){
+        c->registers[0xF] = 1;
+    }
+    else{
+        c->registers[0xF] = 0;
+    }
+    c->registers[Vx] -= c->registers[Vy];
+}
+
+//SHR Vx
+void OP_8xy6(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+
+    c->registers[0xF] = c->registers[Vx] & 0x1u;
+    c->registers[Vx] >>= 1;
+}
+
+//SUBN Vx, Vy
+void OP_8xy7(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+
+    if (c->registers[Vy] > c->registers[Vx]){
+        c->registers[0xF] = 1;
+    }
+    else{
+        c->registers[0xF] = 0;
+    }
+    c->registers[Vx] = c->registers[Vy] - c->registers[Vx];
+}
+
+//SHL Vx {, Vy}
+void OP_8xyE(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+
+    c->registers[0xF] = (c->registers[Vx] & 0x80u) >> 7u;
+    c->registers[Vx] <<= 1;
+}
+
+//SNE Vx, Vy
+void OP_9xy0(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+
+    if (c->registers[Vx] != c->registers[Vy]){
+        c->pc += 2;
+    }
+}
+
+//LD I, addr
+void OP_Annn(Chip8 *c){
+    uint16_t address = c->opcode & 0x0FFFu;
+
+    c->index = address;
+}
+
+//JP V0, addr
+void OP_Bnnn(Chip8 *c){
+    uint16_t address = c->opcode & 0x0FFFu;
+
+    c->pc = c->registers[0] + address;
+}
+
+//RND Vx, byte
+void OP_Cxkk(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t byte = c->opcode & 0x00FFu;
+
+    c->registers[Vx] = random_byte() & byte;
+}
+
+//DRW Vx, Vy, nibble
+//Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+void OP_Dxyn(Chip8 *c){
+    
 }
