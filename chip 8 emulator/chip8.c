@@ -145,7 +145,7 @@ void OP_8xy0(Chip8 *c){
     uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
     uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
 
-    c->registers[Vx] = c->registers[Vy]
+    c->registers[Vx] = c->registers[Vy];
 }
 
 //OR Vx, Vy
@@ -266,5 +266,130 @@ void OP_Cxkk(Chip8 *c){
 //DRW Vx, Vy, nibble
 //Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 void OP_Dxyn(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t Vy = (c->opcode & 0x00F0u) >> 4u;
+    uint8_t height = c->opcode & 0x000Fu;
+
+    //Wrap around
+    uint8_t xPos = c->registers[Vx] % VIDEO_WIDTH;
+    uint8_t yPos = c->registers[Vy] % VIDEO_HEIGHT;
+
+    c->registers[0xF] = 0;
+    for (unsigned int row = 0; row < height; row++){
+        uint8_t spriteByte = c->memory[c->index + row];
+        for (unsigned int col = 0; col < 8; col++){
+            uint8_t spritePixel = spriteByte & (0x80u >> col); //get (row,col) pixel
+            uint32_t* screenPixel = &(c->video[(yPos + row) * VIDEO_WIDTH + (xPos + col)]);
+
+            if (spritePixel){
+
+                if (*screenPixel == 0xFFFFFFFF){
+                    c->registers[0xF] = 1;
+                }
+                
+                *screenPixel ^= 0xFFFFFFFF;
+            }
+        }
+    }
+}
+
+//SKP Vx
+void OP_Ex9E(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t key = c->registers[Vx];
+
+    if (c->keypad[key]){
+        c->pc += 2;
+    }
+}
+
+//SKNP Vx
+void OP_ExA1(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t key = c->registers[Vx];
+
+    if (!c->keypad[key]){
+        c->pc += 2;
+    }
+}
+
+//LD Vx, DT
+void OP_Fx07(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
     
+    c->registers[Vx] = c->delayTimer;
+}
+
+//LD Vx, K
+void OP_Fx0A(Chip8 *c){
+	uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+
+	for (unsigned int key = 0; key < 16; ++key){
+        if (c->keypad[key]){
+            c->registers[Vx] = key;
+            return;
+        }
+    }
+    c->pc -= 2;
+}
+
+//LD DT, Vx
+void OP_Fx15(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    
+    c->delayTimer = c->registers[Vx];
+}
+
+//LD ST, Vx
+void OP_Fx18(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    
+    c->soundTimer = c->registers[Vx];
+}
+
+//ADD I, Vx
+void OP_Fx1E(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    
+    c->index += c->registers[Vx];
+}
+
+//LD F, Vx
+void OP_Fx29(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t digit = c->registers[Vx];
+    
+    c->index = START_ADDRESS + (digit * 5);
+}
+
+//LD B, Vx
+void OP_OP_Fx33(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    uint8_t value = c->registers[Vx];
+    
+    c->memory[c->index + 2] = value % 10;
+    value /= 10;
+
+    c->memory[c->index + 1] = value % 10;
+    value /= 10;
+
+    c->memory[c->index] = value % 10;
+}
+
+//LD [I], Vx
+void OP_Fx55(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    
+    for (uint8_t i = 0; i <= Vx; ++i){
+        c->memory[c->index + i] = c->registers[i];
+    }
+}
+
+//LD Vx, [I]
+void OP_Fx65(Chip8 *c){
+    uint8_t Vx = (c->opcode & 0x0F00u) >> 8u;
+    
+    for (uint8_t i = 0; i <= Vx; ++i){
+        c->registers[i] = c->memory[c->index + i];
+    }
 }
