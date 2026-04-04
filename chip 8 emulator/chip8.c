@@ -486,7 +486,7 @@ void chip8_cycle(Chip8 *c){
     c->pc += 2;
 
     //Decode and execute the opcode
-    table[(c->opcode & 0xF000u) >> 12u];
+    table[(c->opcode & 0xF000u) >> 12u](c);
 
     if (c->delayTimer > 0){
         --c->delayTimer;

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-int platform_init(Platform *p){
+int platform_init(Platform *p, int scale){
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0){
         printf("SDL_Init Error; %s\n", SDL_GetError());
         return 0;
@@ -11,7 +11,7 @@ int platform_init(Platform *p){
 
     p->window = SDL_CreateWindow("CHIP-8 Emulator",
                               0, 0,
-                              64 * 10, 32 * 10,
+                              64 * scale, 32 * scale,
                               SDL_WINDOW_SHOWN);
     if (!p->window) {
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());

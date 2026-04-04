@@ -26,7 +26,7 @@ typedef struct{
 typedef void (*Chip8Func)(Chip8 *);
 
 void chip8_init(Chip8 *chip8);
-void chip8_load_rom(Chip8 *chip8);
+void chip8_load_rom(Chip8 *chip8, const char *filename);
 uint8_t random_byte(void);
 void chip8_init_tables(void);
 void chip8_cycle(Chip8 *chip8);
